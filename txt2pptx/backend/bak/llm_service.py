@@ -1,7 +1,5 @@
-# txt2pptx/backend/llm_service.py
 """LLM service for content expansion and slide outline generation."""
 import json
-import os
 import httpx
 import logging
 from .models import (
@@ -59,11 +57,9 @@ SYSTEM_PROMPT = """你是一位專業的簡報設計師。你的任務是將使�
 
 async def generate_outline_with_llm(
     request: GenerateRequest,
+    api_key: str
 ) -> PresentationOutline:
-    """Use Ollama (OpenAI-compatible API) to generate presentation outline."""
-    ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-    model = os.environ.get("OLLAMA_MODEL", "gpt-oss:2b")
-
+    """Use Anthropic API to generate presentation outline."""
     user_message = f"""請將以下文字內容擴充為 {request.num_slides} 頁的簡報大綱。
 語言：{request.language}
 風格：{request.style}
@@ -74,23 +70,25 @@ async def generate_outline_with_llm(
 
 請直接輸出 JSON，不要加 ```json 標記。"""
 
-    async with httpx.AsyncClient(timeout=600.0) as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(
-            f"{ollama_url}/v1/chat/completions",
-            headers={"content-type": "application/json"},
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
             json={
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_message},
-                ],
-                "stream": False,
+                "model": "claude-sonnet-4-20250514",
+                "max_tokens": 4096,
+                "system": SYSTEM_PROMPT,
+                "messages": [{"role": "user", "content": user_message}],
             },
         )
         resp.raise_for_status()
         data = resp.json()
 
-    text = data["choices"][0]["message"]["content"].strip()
+    text = data["content"][0]["text"].strip()
     # Strip markdown fences if present
     if text.startswith("```"):
         text = text.split("\n", 1)[1]
@@ -238,12 +236,15 @@ def _split_into_chunks(text: str, max_chars: int = 25) -> list[str]:
 
 
 async def generate_outline(request: GenerateRequest) -> PresentationOutline:
-    """Main entry: try Ollama LLM first, fallback to demo mode."""
-    try:
-        logger.info("Using Ollama LLM for outline generation")
-        return await generate_outline_with_llm(request)
-    except Exception as e:
-        logger.warning(f"LLM generation failed: {e}, falling back to demo mode")
+    """Main entry: try LLM first, fallback to demo mode."""
+    api_key = request.api_key
+
+    if api_key:
+        try:
+            logger.info("Using Anthropic API for outline generation")
+            return await generate_outline_with_llm(request, api_key)
+        except Exception as e:
+            logger.warning(f"LLM generation failed: {e}, falling back to demo mode")
 
     logger.info("Using demo mode for outline generation")
     return generate_outline_demo(request)

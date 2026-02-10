@@ -12,7 +12,6 @@ const els = {
     numSlides:       () => $('#numSlides'),
     style:           () => $('#style'),
     language:        () => $('#language'),
-    apiKey:          () => $('#apiKey'),
     generateBtn:     () => $('#generateBtn'),
     progressSection: () => $('#progressSection'),
     progressTitle:   () => $('#progressTitle'),
@@ -62,11 +61,6 @@ async function generatePresentation() {
         style: els.style().value,
         language: els.language().value,
     };
-
-    const apiKey = els.apiKey().value.trim();
-    if (apiKey) {
-        request.api_key = apiKey;
-    }
 
     // Update UI
     showProgress();

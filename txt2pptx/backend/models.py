@@ -47,7 +47,6 @@ class GenerateRequest(BaseModel):
     num_slides: int = Field(default=8, ge=3, le=20)
     language: str = Field(default="zh-TW")
     style: str = Field(default="professional")
-    api_key: Optional[str] = None
 
 
 class GenerateResponse(BaseModel):

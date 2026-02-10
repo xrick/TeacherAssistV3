@@ -459,9 +459,6 @@ body {
     .options-row {
         grid-template-columns: 1fr 1fr;
     }
-    .api-key-group {
-        grid-column: span 2;
-    }
     .main {
         padding: 1.5rem 1rem;
     }
@@ -470,9 +467,6 @@ body {
 @media (max-width: 480px) {
     .options-row {
         grid-template-columns: 1fr;
-    }
-    .api-key-group {
-        grid-column: span 1;
     }
     .result-actions {
         flex-direction: column;
