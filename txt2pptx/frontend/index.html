@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TXT2PPTX — AI 簡報生成器</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">▦</div>
+                    <div>
+                        <h1>TXT2PPTX</h1>
+                        <span class="tagline">AI 智慧簡報生成器</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="section-header">
+                    <h2>輸入文字內容</h2>
+                    <p>貼上您的文字內容，AI 將自動擴充、排版並生成專業簡報</p>
+                </div>
+
+                <div class="input-area">
+                    <textarea
+                        id="textInput"
+                        placeholder="在此貼上您的文字內容...&#10;&#10;例如：&#10;人工智慧（AI）正在革命性地改變各行各業。從醫療診斷到自動駕駛，從金融分析到創意設計，AI 技術的應用範圍持續擴大。本報告將探討 AI 的最新發展趨勢、核心技術突破、產業應用案例，以及未來的機遇與挑戰。"
+                        rows="8"
+                    ></textarea>
+                </div>
+
+                <!-- Options -->
+                <div class="options-row">
+                    <div class="option-group">
+                        <label for="numSlides">投影片數量</label>
+                        <select id="numSlides">
+                            <option value="5">5 頁</option>
+                            <option value="8" selected>8 頁</option>
+                            <option value="10">10 頁</option>
+                            <option value="12">12 頁</option>
+                            <option value="15">15 頁</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label for="style">簡報風格</label>
+                        <select id="style">
+                            <option value="professional">專業商務</option>
+                            <option value="academic">學術報告</option>
+                            <option value="creative">創意設計</option>
+                            <option value="minimal">極簡風格</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label for="language">語言</label>
+                        <select id="language">
+                            <option value="zh-TW" selected>繁體中文</option>
+                            <option value="zh-CN">簡體中文</option>
+                            <option value="en">English</option>
+                            <option value="ja">日本語</option>
+                        </select>
+                    </div>
+                    <div class="option-group api-key-group">
+                        <label for="apiKey">Anthropic API Key <span class="optional">(選填)</span></label>
+                        <input type="password" id="apiKey" placeholder="sk-ant-... (留空使用 Demo 模式)">
+                    </div>
+                </div>
+
+                <button id="generateBtn" class="btn-generate" onclick="generatePresentation()">
+                    <span class="btn-icon">⚡</span>
+                    <span class="btn-text">生成簡報</span>
+                </button>
+            </section>
+
+            <!-- Progress Section -->
+            <section id="progressSection" class="progress-section hidden">
+                <div class="progress-card">
+                    <div class="spinner"></div>
+                    <div class="progress-info">
+                        <h3 id="progressTitle">正在生成簡報...</h3>
+                        <p id="progressDetail">AI 正在分析文字內容並規劃簡報結構</p>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Result Section -->
+            <section id="resultSection" class="result-section hidden">
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="success-icon">✓</div>
+                        <div>
+                            <h3>簡報生成完成！</h3>
+                            <p id="resultInfo"></p>
+                        </div>
+                    </div>
+
+                    <div class="result-actions">
+                        <a id="downloadBtn" class="btn-download" href="#" download>
+                            <span>⬇</span> 下載 PPTX
+                        </a>
+                        <button class="btn-retry" onclick="resetForm()">
+                            重新生成
+                        </button>
+                    </div>
+
+                    <!-- Outline Preview -->
+                    <div class="outline-preview">
+                        <h4>簡報大綱預覽</h4>
+                        <div id="outlineContent" class="outline-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Error Section -->
+            <section id="errorSection" class="error-section hidden">
+                <div class="error-card">
+                    <div class="error-icon">✕</div>
+                    <h3>生成失敗</h3>
+                    <p id="errorMessage"></p>
+                    <button class="btn-retry" onclick="resetForm()">重試</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>TXT2PPTX Prototype — 基於 RAG 架構的 AI 簡報生成系統</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
