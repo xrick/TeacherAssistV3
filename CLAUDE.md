@@ -70,6 +70,7 @@ The current architecture does **not** use .pptx template files. All 9 slide type
 - Text boxes with manual positioning via `_add_text_box()`
 - Bullet lists with custom XML markers via `_add_bullets()`
 - Image areas are gray placeholder rectangles (no real image insertion)
+- A template file `txt2pptx/templates/ocean_gradient.pptx` has been created for future migration to template-based generation
 - See `claudedocs/how_to/pptx_template_guide.md` for migration analysis toward template-based approach
 
 ### LLM Integration
@@ -83,8 +84,10 @@ txt2pptx/
   backend/           # FastAPI + python-pptx
   frontend/          # Vanilla HTML/CSS/JS (no build step)
   generated/         # Output PPTX files (auto-created, gitignored ideally)
+  templates/         # .pptx template files (ocean_gradient.pptx)
   start.sh / stop.sh # Server lifecycle scripts (PID-managed)
 claudedocs/          # Claude-generated analysis & documentation
+  how_to/            # Template guides, Google Slides workflow docs
 refData/             # Reference materials, papers, plans
 pptxenv/             # Python virtual environment (not in git)
 ```
