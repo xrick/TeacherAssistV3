@@ -1,3 +1,4 @@
+# txt2pptx/backend/pptx_generator.py
 """PPTX generator with template-based layouts."""
 import io
 import math

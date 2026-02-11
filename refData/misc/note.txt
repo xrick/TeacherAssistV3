@@ -1,0 +1,2 @@
+refData/misc/note.txt
+請把以上你的說明接續寫在 claudedocs/how_to/how_to_make_google_slide_template.md

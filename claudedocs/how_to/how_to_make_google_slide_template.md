@@ -207,3 +207,276 @@ prs.save('templates/ocean_gradient_enhanced.pptx')
     → 完整控制 idx / type / 位置
     → 最終模板
 ```
+
+---
+
+## 佔位符（Placeholder）概念說明
+
+### 佔位符不是普通的文字方塊
+
+它們看起來很像，但在 PowerPoint 內部是**完全不同的物件**。
+
+| | 普通文字方塊 (TextBox) | 佔位符 (Placeholder) |
+|---|---|---|
+| 比喻 | 你自己在白紙上畫一個框 | 表格裡預印好的空格欄位 |
+| 誰定義位置？ | 程式碼自己指定座標 | **模板（Layout）預先定義好** |
+| 繼承關係 | 無 | Master → Layout → Slide 三層繼承 |
+| 有 `idx` 嗎？ | 無 | 有（如 idx=0 是標題，idx=1 是內文） |
+| 有 `type` 嗎？ | 無 | 有（TITLE、BODY、PICTURE 等） |
+
+### 佔位符的三層繼承
+
+```text
+Slide Master（母版）
+  定義：「標題在上方，字體 36pt Calibri Bold」
+       ↓ 繼承
+Slide Layout（版面配置）
+  定義：「這個 Layout 有標題(idx=0) + 內文(idx=1) + 圖片(idx=2)」
+  覆寫：「標題位置改到左邊，內文佔 60% 寬」
+       ↓ 繼承
+Slide（實際投影片）
+  只需要：placeholders[0].text = "我的標題"
+  位置、大小、字體 → 全部從上面繼承
+```
+
+### 佔位符類型一覽
+
+| type 值 | 用途 | 填入方式 |
+|---------|------|----------|
+| `TITLE` (15) | 標題 | `.text = "..."` |
+| `BODY` (6) | 內文/條列 | `.text_frame.text = "..."` |
+| `PICTURE` (18) | 圖片區域 | `.insert_picture(image_file)` |
+| `SUBTITLE` (4) | 副標題 | `.text = "..."` |
+| `SLIDE_NUMBER` (12) | 頁碼 | 自動填入 |
+| `TABLE` (14) | 表格 | `.insert_table(rows, cols)` |
+
+### 程式碼對比：文字方塊 vs 佔位符
+
+目前 `pptx_generator.py` 用的是**文字方塊**（手動指定座標）：
+
+```python
+# 目前做法：手動指定每個座標（文字方塊）
+txBox = slide.shapes.add_textbox(
+    Inches(0.8),    # 左邊距 ← 自己算
+    Inches(0.5),    # 上邊距 ← 自己算
+    Inches(11.733), # 寬度   ← 自己算
+    Inches(0.8)     # 高度   ← 自己算
+)
+txBox.text_frame.text = "標題文字"
+```
+
+如果改用**佔位符**（位置由模板決定）：
+
+```python
+# 模板做法：位置由模板決定（佔位符）
+slide = prs.slides.add_slide(prs.slide_layouts[0])  # 使用 title_slide Layout
+slide.placeholders[0].text = "標題文字"  # idx=0 → 標題佔位符，位置自動
+slide.placeholders[1].text = "副標題"    # idx=1 → 副標題佔位符，位置自動
+```
+
+### 圖片佔位符的價值
+
+這是佔位符最有價值的地方。目前專案的「圖片區」只是灰色矩形：
+
+```python
+# 目前：假圖片（灰色矩形 + 文字標籤）
+_add_image_placeholder(slide, 7.2, 1.2, 5.2, 5.0, "圖片區域")
+# 結果：一個灰色方塊，無法放入真正的圖片
+```
+
+用 Picture Placeholder 就能插入真正的圖片：
+
+```python
+# 模板做法：真實圖片插入
+slide.placeholders[2].insert_picture(open('photo.jpg', 'rb'))
+# 結果：圖片自動縮放到佔位符定義的大小和位置
+```
+
+### 在 PowerPoint / Google Slides 中辨認佔位符
+
+在主題編輯器中，寫著「按一下以編輯...」的框就是佔位符：
+
+```text
+┌──────────────────────────────────────┐
+│  按一下以編輯母片標題樣式              │  ← TITLE Placeholder (idx=0)
+│  (Click to edit Master title style)   │
+├──────────────────────────────────────┤
+│  按一下以編輯母片文字樣式              │  ← BODY Placeholder (idx=1)
+│  • 第二層                             │
+│  • 第三層                             │
+└──────────────────────────────────────┘
+```
+
+它們和手動插入的文字方塊外觀一樣，但內部的 XML 結構完全不同：
+
+```xml
+<!-- 普通文字方塊的 XML -->
+<p:sp>
+  <p:nvSpPr>
+    <p:nvPr/>  <!-- 空的，無佔位符資訊 -->
+  </p:nvSpPr>
+</p:sp>
+
+<!-- 佔位符的 XML -->
+<p:sp>
+  <p:nvSpPr>
+    <p:nvPr>
+      <p:ph idx="0" type="title"/>  <!-- 有 idx 和 type -->
+    </p:nvPr>
+  </p:nvSpPr>
+</p:sp>
+```
+
+---
+
+## 在 Google Slides 母片上插入佔位符
+
+### 進入主題編輯器
+
+1. 開啟 Google Slides 簡報
+2. 上方選單 → **投影片 (Slide)** → **編輯主題 (Edit theme)**
+
+左側面板會列出「母版 (Master)」和下方的多個「版面配置 (Layouts)」。
+
+### 插入佔位符的操作
+
+**選擇你要編輯的 Layout**（點選左側某個版面配置），然後：
+
+上方選單 → **插入 (Insert)** → **佔位符 (Placeholder)** → 可選類型：
+
+- 標題文字 (Title text)
+- 副標題文字 (Subtitle text)
+- 內文文字 (Body text)
+- 圖片 (Image) — 僅部分版本支援
+- 未編號清單 / 編號清單
+
+選擇類型後，**在版面上拖曳**畫出佔位符的位置和大小。
+
+> **重要：** Google Slides 的「插入 → 佔位符」選單**只有在主題編輯模式下才會出現**。在普通編輯模式下，「插入」選單裡不會有「佔位符」這個選項。
+
+### 操作示範（以 bullets Layout 為例）
+
+```text
+第一步：在左側面板，右鍵 → 新增版面配置 (New layout)
+第二步：重新命名為 "bullets"
+
+第三步：插入 → 佔位符 → 標題文字
+        在頂部拖曳出一個長條框
+        ┌─────────────────────────────────┐
+        │  按一下新增標題                    │ ← Title placeholder
+        └─────────────────────────────────┘
+
+第四步：插入 → 佔位符 → 內文文字
+        在左下方拖曳出一個大框
+        ┌──────────────────┐
+        │  按一下新增文字    │ ← Body placeholder
+        │                  │
+        │                  │
+        └──────────────────┘
+
+完成後的 Layout 看起來像：
+┌─────────────────────────────────────┐
+│  按一下新增標題                       │
+├───────────────────┬─────────────────┤
+│                   │                 │
+│  按一下新增文字    │  (空白區域，     │
+│  • 項目一         │   可放靜態裝飾)   │
+│  • 項目二         │                 │
+│                   │                 │
+└───────────────────┴─────────────────┘
+```
+
+### 佔位符 vs 文字方塊 — 在 Google Slides 中的差異
+
+| 操作 | 結果 |
+|------|------|
+| 主題編輯器中 → 插入 → **佔位符** | 真正的 placeholder，匯出 .pptx 後 python-pptx 可透過 `placeholders[idx]` 存取 |
+| 主題編輯器中 → 插入 → **文字方塊** | 變成 Layout 上的**靜態裝飾**，每張套用此 Layout 的投影片都會顯示，但程式碼無法透過 idx 存取 |
+| 普通模式中 → 插入 → 文字方塊 | 只存在於該張投影片，與模板無關 |
+
+### 每個 Layout 需要的佔位符配置
+
+| Layout | 需插入的佔位符 |
+|--------|---------------|
+| title_slide | 標題文字 + 副標題文字 |
+| section_header | 標題文字 + 副標題文字 |
+| bullets | 標題文字 + 內文文字 |
+| two_column | 標題文字 + 內文文字 x2（左右各一） |
+| image_left | 標題文字 + 內文文字（右側）+ 圖片佔位符或灰色矩形（左側） |
+| image_right | 標題文字 + 內文文字（左側）+ 圖片佔位符或灰色矩形（右側） |
+| key_stats | 標題文字 + 內文文字 x3~4（排成卡片） |
+| comparison | 標題文字 + 內文文字 x2（左右各一） |
+| conclusion | 標題文字 + 內文文字 |
+
+### 匯出後驗證 idx
+
+完成所有 Layout 後，匯出為 `.pptx`，用 Python 腳本確認 idx：
+
+```python
+from pptx import Presentation
+
+prs = Presentation('your_template.pptx')
+for i, layout in enumerate(prs.slide_layouts):
+    print(f"\n--- Layout {i}: {layout.name} ---")
+    for ph in layout.placeholders:
+        print(f"  idx={ph.placeholder_format.idx}  "
+              f"type={ph.placeholder_format.type}  "
+              f"name='{ph.name}'")
+```
+
+Google Slides 自動分配的 `idx` 通常從 0 開始遞增，但**順序不一定與你插入的順序相同**，所以這一步驗證不可省略。
+
+---
+
+## Accent Bar（強調裝飾條）說明
+
+### 什麼是 Accent Bar？
+
+就是一條**很細的彩色長條**，放在投影片的頂部或底部，純粹做裝飾用。
+
+```text
+┌══════════════════════════════════════┐  ← 這條就是 accent bar
+│                                      │     （寬度填滿整張投影片，高度極薄）
+│                                      │
+│         投影片內容區域                 │
+│                                      │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+### 在本專案中的實作
+
+`pptx_generator.py` 裡的 `_add_top_accent_bar()` 做的事情：
+
+```python
+# 在投影片頂端畫一條 accent 色的細長矩形
+_add_shape(slide, MSO_SHAPE.RECTANGLE,
+    left=0,           # 最左邊
+    top=0,            # 最頂端
+    width=13.333,     # 填滿整張 16:9 投影片寬度
+    height=0.06,      # 極薄（約 1.5mm）
+    fill_color=Theme.ACCENT  # #02C39A（薄荷綠）
+)
+```
+
+產生的結果就是一條寬 13.333 吋、高 0.06 吋的薄荷綠色細線，貼在投影片最上方。
+
+### 為什麼要用它？
+
+- **視覺一致性** — 每張投影片頂部都有同一條色線，讓整份簡報有統一的品牌感
+- **專業感** — 企業簡報常見的設計手法，用品牌色做微小的裝飾點綴
+- **分隔作用** — 把投影片頂部邊緣和內容做一個視覺區隔
+
+### 在模板中如何處理
+
+Accent bar 不承載任何內容，只是一個設計元素。在模板化架構中，這類裝飾應該放在 **Slide Master** 或各 **Layout** 上作為**靜態形狀**（不是佔位符），而不是每次都用程式碼畫。
+
+在 Google Slides 主題編輯器中的做法：
+
+1. 選擇母版（Master）或特定 Layout
+2. **插入** → **形狀** → **矩形**
+3. 拉到投影片頂端，調整為極扁的長條
+4. 設定填充色為主題的 accent 色（如 `#02C39A`）
+5. 設定無框線
+
+這樣每張套用此母版/Layout 的投影片都會自動帶有這條裝飾，無需程式碼介入。

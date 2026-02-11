@@ -1,3 +1,4 @@
+<!-- claudedocs/how_to/pptx_template_guide.md -->
 # PPTX 模板機制分析與製作指南
 
 ## 目前架構：程式碼繪製（Code-Drawn）
