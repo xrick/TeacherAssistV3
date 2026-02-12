@@ -10,7 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .models import GenerateRequest, GenerateResponse
 from .llm_service import generate_outline
-from .pptx_generator import generate_pptx
+from .pptx_generator import generate_pptx as generate_pptx_code_drawn
+from .pptx_generator_template import generate_pptx as generate_pptx_template
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -49,8 +50,13 @@ async def generate_presentation(request: GenerateRequest):
         outline = await generate_outline(request)
         logger.info(f"Outline generated: {outline.title}, {len(outline.slides)} slides")
 
-        # Step 2: Generate PPTX
-        pptx_bytes = generate_pptx(outline)
+        # Step 2: Generate PPTX (根據模板選擇)
+        GENERATORS = {
+            "code_drawn": generate_pptx_code_drawn,
+            "ocean_gradient": generate_pptx_template,
+        }
+        generator = GENERATORS.get(request.template, generate_pptx_code_drawn)
+        pptx_bytes = generator(outline)
 
         # Step 3: Save file
         filename = f"{uuid.uuid4().hex[:8]}.pptx"

@@ -13,6 +13,7 @@ const els = {
     numSlides:       () => $('#numSlides'),
     style:           () => $('#style'),
     language:        () => $('#language'),
+    template:        () => $('#template'),
     generateBtn:     () => $('#generateBtn'),
     progressSection: () => $('#progressSection'),
     progressTitle:   () => $('#progressTitle'),
@@ -61,6 +62,7 @@ async function generatePresentation() {
         num_slides: parseInt(els.numSlides().value),
         style: els.style().value,
         language: els.language().value,
+        template: els.template().value,
     };
 
     // Update UI
