@@ -25,7 +25,9 @@ logger = logging.getLogger(__name__)
 # 常數
 # ──────────────────────────────────────────────
 
-TEMPLATE_PATH = Path(__file__).parent.parent / "templates" / "ocean_gradient.pptx"
+# Default template path (used as fallback)
+DEFAULT_TEMPLATE = "ocean_gradient.pptx"
+TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 
 # SlideLayout enum → 模板 layout index 映射
 LAYOUT_MAP = {
@@ -269,9 +271,29 @@ TEMPLATE_BUILDERS = {
 # 公開入口
 # ──────────────────────────────────────────────
 
-def generate_pptx(outline: PresentationOutline) -> bytes:
-    """Generate PPTX bytes from a presentation outline using template."""
-    prs = Presentation(str(TEMPLATE_PATH))
+def generate_pptx(outline: PresentationOutline, template_id: str = "ocean_gradient") -> bytes:
+    """Generate PPTX bytes from a presentation outline using specified template.
+
+    Args:
+        outline: Presentation outline with slides data
+        template_id: Template file name (without .pptx extension). Defaults to "ocean_gradient".
+                    Falls back to default template if specified template doesn't exist.
+
+    Returns:
+        PPTX file as bytes
+    """
+    # Resolve template path
+    template_path = TEMPLATES_DIR / f"{template_id}.pptx"
+
+    if not template_path.exists():
+        logger.warning(f"Template {template_id} not found at {template_path}, using default template")
+        template_path = TEMPLATES_DIR / DEFAULT_TEMPLATE
+
+        if not template_path.exists():
+            raise FileNotFoundError(f"Default template not found: {template_path}")
+
+    logger.info(f"Loading template: {template_path.name}")
+    prs = Presentation(str(template_path))
     _clean_template_slides(prs)
 
     total = len(outline.slides)

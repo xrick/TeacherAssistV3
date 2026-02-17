@@ -51,12 +51,12 @@ async def generate_presentation(request: GenerateRequest):
         logger.info(f"Outline generated: {outline.title}, {len(outline.slides)} slides")
 
         # Step 2: Generate PPTX (根據模板選擇)
-        GENERATORS = {
-            "code_drawn": generate_pptx_code_drawn,
-            "ocean_gradient": generate_pptx_template,
-        }
-        generator = GENERATORS.get(request.template, generate_pptx_code_drawn)
-        pptx_bytes = generator(outline)
+        if request.template == "code_drawn":
+            logger.info("Using code-drawn generator")
+            pptx_bytes = generate_pptx_code_drawn(outline)
+        else:
+            logger.info(f"Using template generator with template: {request.template}")
+            pptx_bytes = generate_pptx_template(outline, template_id=request.template)
 
         # Step 3: Save file
         filename = f"{uuid.uuid4().hex[:8]}.pptx"

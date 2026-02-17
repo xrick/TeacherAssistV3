@@ -11,7 +11,7 @@ const $ = (sel) => document.querySelector(sel);
 const els = {
     textInput:       () => $('#textInput'),
     numSlides:       () => $('#numSlides'),
-    style:           () => $('#style'),
+    // style:           () => $('#style'), // Commented out - style selector removed from UI
     language:        () => $('#language'),
     generationMode:  () => $('#generationMode'),
     template:        () => $('#template'),
@@ -66,7 +66,7 @@ async function generatePresentation() {
     const request = {
         text: text,
         num_slides: parseInt(els.numSlides().value),
-        style: els.style().value,
+        style: 'professional', // Default style (style selector commented out to avoid confusion)
         language: els.language().value,
         template: template,
     };
