@@ -33,7 +33,7 @@ class SlideData(BaseModel):
     right_title: Optional[str] = None
     stats: Optional[list[StatItem]] = None
     image_prompt: Optional[str] = None
-    speaker_notes: Optional[str] = None
+    speaker_notes: str = Field(default="", min_length=50, max_length=200, description="詳細補充說明，50-100字為佳")
 
 
 class PresentationOutline(BaseModel):
