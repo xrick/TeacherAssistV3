@@ -1,0 +1,1 @@
+source pptxenv/bin/activate
