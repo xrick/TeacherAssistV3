@@ -92,6 +92,18 @@ async def download_file(filename: str):
 @app.get("/api/templates")
 async def list_templates():
     """列出所有可用的簡報模板。"""
+    # 模板中英文名稱對照表
+    TEMPLATE_NAMES = {
+        "College_Elegance": "學院典雅",
+        "Data_Centric": "數據導向",
+        "High_Contrast": "高調對比",
+        "Minimalist_Corporate": "極簡商務",
+        "Modernist": "摩登現代",
+        "ocean_gradient": "預設版面",
+        "Startup_Edge": "新創活力",
+        "Zen_Serenity": "靜謐禪意",
+    }
+
     templates = [
         {
             "id": "code_drawn",
@@ -116,10 +128,13 @@ async def list_templates():
                 logger.warning(f"模板 {template_file.name} 不可用: {e}")
                 available = False
 
+            # 使用中文名稱對照表，若無對應則使用原始格式化名稱
+            chinese_name = TEMPLATE_NAMES.get(template_id, template_id.replace("_", " ").title())
+
             templates.append({
                 "id": template_id,
-                "name": template_id.replace("_", " ").title(),
-                "description": f"使用 {template_file.name} 模板",
+                "name": chinese_name,
+                "description": f"使用 {chinese_name} 模板",
                 "available": available,
                 "is_template": True
             })

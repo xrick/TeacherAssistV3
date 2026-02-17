@@ -85,7 +85,7 @@ conclusion: 最後一頁。
 async def generate_outline_with_llm(
     request: GenerateRequest,
 ) -> PresentationOutline:
-    """Use Ollama (OpenAI-compatible API) to generate presentation outline."""
+    """Use Ollama native API with Pydantic schema for structured output."""
     ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
     model = os.environ.get("OLLAMA_MODEL", "gpt-oss:20b")
 
@@ -95,13 +95,12 @@ async def generate_outline_with_llm(
 內容要求：深度擴充、盡可能豐富內容，請根據內容選擇最合適的佈局類型。
 ---
 {request.text}
----
+---"""
 
-請直接輸出 JSON，不要加 ```json 標記。"""
-
+    # 使用原生 Ollama API + Pydantic schema 獲得更強的類型約束
     async with httpx.AsyncClient(timeout=600.0) as client:
         resp = await client.post(
-            f"{ollama_url}/v1/chat/completions",
+            f"{ollama_url}/api/chat",  # 使用原生 API
             headers={"content-type": "application/json"},
             json={
                 "model": model,
@@ -110,14 +109,16 @@ async def generate_outline_with_llm(
                     {"role": "user", "content": user_message},
                 ],
                 "stream": False,
-                "response_format": {"type": "json_object"},  # 強制 JSON 模式
-                "temperature": 0.5,  # 降低隨機性，提高穩定性
+                "format": PresentationOutline.model_json_schema(),  # 傳入完整 Pydantic schema
+                "options": {
+                    "temperature": 0.5,  # 降低隨機性
+                }
             },
         )
         resp.raise_for_status()
         data = resp.json()
 
-    text = data["choices"][0]["message"]["content"].strip()
+    text = data["message"]["content"].strip()  # 原生 API 的響應結構不同
 
     # Debug: Log raw LLM response
     logger.info(f"🔍 Raw LLM response (first 500 chars): {text[:500]}")
