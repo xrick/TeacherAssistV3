@@ -472,3 +472,83 @@ body {
         flex-direction: column;
     }
 }
+
+/* ── Advanced Settings ── */
+.advanced-settings {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #F8FAFC;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+}
+
+.advanced-settings summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #1E293B;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    user-select: none;
+    padding: 0.25rem;
+    list-style: none;
+}
+
+.advanced-settings summary::-webkit-details-marker {
+    display: none;
+}
+
+.advanced-settings summary::before {
+    content: '▸';
+    transition: transform 0.2s;
+    display: inline-block;
+    width: 1em;
+}
+
+.advanced-settings[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.advanced-settings summary:hover {
+    color: #065A82;
+}
+
+.advanced-icon {
+    font-size: 1.1em;
+}
+
+.collapse-hint {
+    font-size: 0.85em;
+    color: #94A3B8;
+    font-weight: 400;
+    margin-left: auto;
+}
+
+.advanced-content {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #E2E8F0;
+}
+
+.option-hint {
+    font-size: 0.85rem;
+    color: #64748B;
+    margin-top: 0.5rem;
+    line-height: 1.6;
+}
+
+/* 隱藏狀態（當選擇程式碼繪製時隱藏模板選單） */
+.option-group.hidden {
+    display: none;
+}
+
+/* ── Fallback Warning ── */
+.fallback-warning {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #92400E;
+}

@@ -39,7 +39,7 @@
                     ></textarea>
                 </div>
 
-                <!-- Options -->
+                <!-- Basic Options -->
                 <div class="options-row">
                     <div class="option-group">
                         <label for="numSlides">投影片數量</label>
@@ -69,14 +69,37 @@
                             <option value="ja">日本語</option>
                         </select>
                     </div>
-                    <div class="option-group">
-                        <label for="template">簡報模板</label>
-                        <select id="template">
-                            <option value="code_drawn">經典繪製</option>
-                            <option value="ocean_gradient" selected>Ocean Gradient</option>
-                        </select>
-                    </div>
                 </div>
+
+                <!-- Advanced Settings -->
+                <details class="advanced-settings">
+                    <summary>
+                        <span class="advanced-icon">⚙️</span>
+                        進階設定
+                        <span class="collapse-hint">(選填)</span>
+                    </summary>
+                    <div class="advanced-content">
+                        <div class="option-group">
+                            <label for="generationMode">生成模式</label>
+                            <select id="generationMode">
+                                <option value="template" selected>模板模式（推薦）</option>
+                                <option value="code_drawn">程式碼繪製模式</option>
+                            </select>
+                            <p class="option-hint">
+                                📄 <strong>模板模式</strong>：使用預設專業模板，生成速度快、樣式統一<br>
+                                🖌️ <strong>程式碼繪製</strong>：完全程式化繪製，靈活性高、可精確控制
+                            </p>
+                        </div>
+
+                        <div class="option-group" id="templateSelector">
+                            <label for="template">選擇模板</label>
+                            <select id="template">
+                                <option value="ocean_gradient" selected>Ocean Gradient</option>
+                                <!-- 將由 JavaScript 動態載入其他模板 -->
+                            </select>
+                        </div>
+                    </div>
+                </details>
 
                 <button id="generateBtn" class="btn-generate" onclick="generatePresentation()">
                     <span class="btn-icon">⚡</span>

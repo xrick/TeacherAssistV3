@@ -13,7 +13,9 @@ const els = {
     numSlides:       () => $('#numSlides'),
     style:           () => $('#style'),
     language:        () => $('#language'),
+    generationMode:  () => $('#generationMode'),
     template:        () => $('#template'),
+    templateSelector: () => $('#templateSelector'),
     generateBtn:     () => $('#generateBtn'),
     progressSection: () => $('#progressSection'),
     progressTitle:   () => $('#progressTitle'),
@@ -56,13 +58,17 @@ async function generatePresentation() {
     if (isGenerating) return;
     isGenerating = true;
 
+    // 根據生成模式決定 template 參數
+    const mode = els.generationMode().value;
+    const template = mode === 'code_drawn' ? 'code_drawn' : els.template().value;
+
     // Prepare request
     const request = {
         text: text,
         num_slides: parseInt(els.numSlides().value),
         style: els.style().value,
         language: els.language().value,
-        template: els.template().value,
+        template: template,
     };
 
     // Update UI
@@ -148,13 +154,32 @@ function showResult(data) {
     els.progressSection().classList.add('hidden');
     els.resultSection().classList.remove('hidden');
 
+    // 移除舊的降級警告（如果有）
+    const oldWarning = $('.fallback-warning');
+    if (oldWarning) {
+        oldWarning.remove();
+    }
+
+    // 若發生降級，顯示警告訊息
+    if (data.fallback_used) {
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'fallback-warning';
+        warningDiv.innerHTML = `
+            ⚠️ <strong>注意</strong>:
+            原選模板不可用，已自動切換為經典繪製模式。
+        `;
+        const resultCard = els.resultSection().querySelector('.result-card');
+        resultCard.insertBefore(warningDiv, resultCard.firstChild);
+    }
+
     // Download link
     els.downloadBtn().href = `${API_BASE}/api/download/${data.filename}`;
     els.downloadBtn().download = data.filename;
 
     // Info
     const numSlides = data.outline?.slides?.length || '?';
-    els.resultInfo().textContent = `${data.outline?.title || '簡報'} — ${numSlides} 頁投影片`;
+    const templateInfo = data.template_used ? ` — 使用 ${data.template_used}` : '';
+    els.resultInfo().textContent = `${data.outline?.title || '簡報'} — ${numSlides} 頁投影片${templateInfo}`;
 
     // Outline preview
     renderOutline(data.outline);
@@ -220,4 +245,59 @@ document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         generatePresentation();
     }
+});
+
+// ── Dynamic Template Loading ──
+async function loadAvailableTemplates() {
+    try {
+        const response = await fetch('/api/templates');
+        const data = await response.json();
+
+        const templateSelect = els.template();
+        templateSelect.innerHTML = '';
+
+        // 只顯示真實模板（is_template: true）
+        const templates = data.templates.filter(t => t.is_template);
+
+        templates.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.id;
+            option.textContent = t.name;
+            option.disabled = !t.available;
+            if (t.id === 'ocean_gradient') {
+                option.selected = true;
+            }
+            templateSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error('載入模板列表失敗:', error);
+        // 保持預設的硬編碼選項
+    }
+}
+
+// ── Advanced Settings Interaction ──
+function setupAdvancedSettings() {
+    const modeSelect = els.generationMode();
+    const templateSelector = els.templateSelector();
+
+    modeSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'code_drawn') {
+            // 隱藏模板選單
+            templateSelector.classList.add('hidden');
+        } else {
+            // 顯示模板選單
+            templateSelector.classList.remove('hidden');
+            // 如果當前選擇是 code_drawn，恢復為第一個可用模板
+            if (els.template().value === 'code_drawn') {
+                els.template().selectedIndex = 0;
+            }
+        }
+    });
+}
+
+// ── Page Initialization ──
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadAvailableTemplates();
+    setupAdvancedSettings();
 });

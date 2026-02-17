@@ -89,6 +89,44 @@ async def download_file(filename: str):
     )
 
 
+@app.get("/api/templates")
+async def list_templates():
+    """列出所有可用的簡報模板。"""
+    templates = [
+        {
+            "id": "code_drawn",
+            "name": "經典繪製",
+            "description": "完全程式化繪製，靈活性高",
+            "available": True,
+            "is_template": False
+        }
+    ]
+
+    # 檢查 templates 目錄下的所有 .pptx 檔案
+    templates_dir = BASE_DIR / "templates"
+    if templates_dir.exists():
+        for template_file in templates_dir.glob("*.pptx"):
+            template_id = template_file.stem
+            try:
+                # 嘗試載入模板驗證可用性
+                from pptx import Presentation
+                test_prs = Presentation(str(template_file))
+                available = True
+            except Exception as e:
+                logger.warning(f"模板 {template_file.name} 不可用: {e}")
+                available = False
+
+            templates.append({
+                "id": template_id,
+                "name": template_id.replace("_", " ").title(),
+                "description": f"使用 {template_file.name} 模板",
+                "available": available,
+                "is_template": True
+            })
+
+    return {"templates": templates}
+
+
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "version": "0.1.0"}
