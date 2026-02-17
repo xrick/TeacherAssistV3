@@ -40,10 +40,9 @@ conclusion: 最後一頁。
 4. 輸出規範
 嚴格輸出純 JSON 格式，不得包含 Markdown 標記（如 ```json）。
 
-image_prompt 必須以英文撰寫，描述高品質、專業的商業攝影風格。
+5. image_prompt 必須以英文撰寫，描述高品質、專業的商業攝影風格。
 
-5. JSON 結構
-```JSON
+6. JSON 結構
 {
   "title": "標題",
   "subtitle": "副標題",

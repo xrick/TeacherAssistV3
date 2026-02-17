@@ -1,0 +1,39 @@
+1. 商業與專業科技 (Business & Tech)
+這類風格強調專業感、結構化與前衛感，適合企業提案或科技發佈。
+
+極簡商務 (Minimalist Corporate)：強調大量留白與乾淨的黑白灰調。
+
+數據導向 (Data-Centric)：強化圖表與數字展示的視覺權重。
+
+深藍科技 (Future Tech)：以深藍或深灰為基調，搭配發光線條感。
+
+新創活力 (Startup Edge)：使用鮮豔的主題色與大膽的無襯線字體。
+
+2. 藝術與視覺設計 (Artistic & Visual)
+強調圖像美學、排版創意與色彩張力，適合行銷、時尚或設計報告。
+
+摩登現代 (Modernist)：利用幾何形狀與非對稱佈局。
+
+復古懷舊 (Retro Classic)：採用低飽和度色彩與經典襯線字體。
+
+溫潤大地 (Earth Tones)：以自然、柔和的色調營造舒適感。
+
+高調對比 (High Contrast)：強烈的補色對比，適合吸睛的行銷活動。
+
+3. 教育與學術研究 (Education & Research)
+著重於邏輯清晰、中性色調與閱讀流暢度。
+
+學院典雅 (Academic Elite)：正式、莊重，適合學術論文或校史介紹。
+
+清新手繪 (Organic Sketch)：使用手繪插圖，增加親和力與教學互動感。
+
+結構美學 (Structural Logic)：強調層級分明、如教科書般的嚴謹排版。
+
+4. 創意與生活風格 (Creative & Lifestyle)
+適合旅遊、健康、生活方式或個人品牌。
+
+多彩繽紛 (Vibrant Palette)：充滿活力、多色彩的模組化設計。
+
+靜謐禪意 (Zen Serenity)：極度簡約、呼吸感強，強調心理穩定感。
+
+都市工業 (Urban Industrial)：結合金屬感、水泥色與粗獷的字體設計。

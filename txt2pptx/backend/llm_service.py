@@ -62,10 +62,9 @@ conclusion: 最後一頁。
 4. 輸出規範
 嚴格輸出純 JSON 格式，不得包含 Markdown 標記（如 ```json）。
 
-image_prompt 必須以英文撰寫，描述高品質、專業的商業攝影風格。
+5. image_prompt 必須以英文撰寫，描述高品質、專業的商業攝影風格。
 
-5. JSON 結構
-```JSON
+6. JSON 結構
 {
   "title": "標題",
   "subtitle": "副標題",
@@ -111,12 +110,18 @@ async def generate_outline_with_llm(
                     {"role": "user", "content": user_message},
                 ],
                 "stream": False,
+                "response_format": {"type": "json_object"},  # 強制 JSON 模式
+                "temperature": 0.5,  # 降低隨機性，提高穩定性
             },
         )
         resp.raise_for_status()
         data = resp.json()
 
     text = data["choices"][0]["message"]["content"].strip()
+
+    # Debug: Log raw LLM response
+    logger.info(f"🔍 Raw LLM response (first 500 chars): {text[:500]}")
+
     # Strip markdown fences if present
     if text.startswith("```"):
         text = text.split("\n", 1)[1]
@@ -124,7 +129,22 @@ async def generate_outline_with_llm(
             text = text[:-3]
         text = text.strip()
 
-    outline_data = json.loads(text)
+    try:
+        outline_data = json.loads(text)
+    except json.JSONDecodeError as e:
+        logger.error(f"❌ JSON parse error: {e}")
+        logger.error(f"Raw text causing error:\n{text}")
+        raise
+
+    # Debug: Log parsed data type and structure
+    logger.info(f"🔍 Parsed data type: {type(outline_data)}")
+    if isinstance(outline_data, dict):
+        logger.info(f"🔍 Dict keys: {list(outline_data.keys())}")
+    else:
+        logger.error(f"❌ Expected dict, got {type(outline_data)}")
+        logger.error(f"Problematic data:\n{json.dumps(outline_data, indent=2, ensure_ascii=False)[:1000]}")
+        raise ValueError(f"LLM returned {type(outline_data).__name__} instead of dict")
+
     return PresentationOutline(**outline_data)
 
 
@@ -266,10 +286,14 @@ def _split_into_chunks(text: str, max_chars: int = 25) -> list[str]:
 async def generate_outline(request: GenerateRequest) -> PresentationOutline:
     """Main entry: try Ollama LLM first, fallback to demo mode."""
     try:
-        logger.info("Using Ollama LLM for outline generation")
-        return await generate_outline_with_llm(request)
+        logger.info("🚀 Attempting Ollama LLM outline generation")
+        result = await generate_outline_with_llm(request)
+        logger.info("✅ LLM generation successful")
+        return result
     except Exception as e:
-        logger.warning(f"LLM generation failed: {e}, falling back to demo mode")
+        logger.error(f"❌ LLM generation failed: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"Stack trace:\n{traceback.format_exc()}")
 
-    logger.info("Using demo mode for outline generation")
+    logger.warning("⚠️ Falling back to demo mode for outline generation")
     return generate_outline_demo(request)
