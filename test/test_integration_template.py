@@ -2,7 +2,7 @@
 """
 整合測試：模板套用 + 重試機制驗證
 測試內容：離散數學
-測試模板：Zen_Serenity.pptx
+測試模板：College_Elegance.pptx
 """
 import asyncio
 import httpx
@@ -24,7 +24,7 @@ async def main():
     print("整合測試：模板套用 + 重試機制 + API 端點")
     print("=" * 80)
     print(f"測試內容: Discrete Mathematics (離散數學)")
-    print(f"測試模板: Zen_Serenity")
+    print(f"測試模板: College_Elegance")
     print(f"內容長度: {len(test_text)} 字元")
     print(f"API 端點: http://localhost:8000/api/generate")
     print("=" * 80)
@@ -36,7 +36,7 @@ async def main():
         "num_slides": 8,
         "language": "繁體中文",
         "style": "professional",
-        "template": "Zen_Serenity"  # 指定模板
+        "template": "College_Elegance"  # 指定模板
     }
 
     # 完整整合測試：透過 API 呼叫（測試重試機制 + 模板套用）
@@ -150,7 +150,7 @@ async def main():
                 pptx_bytes = download_response.content
 
                 # 儲存測試檔案
-                output_path = Path(__file__).parent / "output_integration_zen_serenity.pptx"
+                output_path = Path(__file__).parent / "output_integration_college_elegance.pptx"
                 output_path.write_bytes(pptx_bytes)
 
                 print(f"✅ PPTX 下載成功")
