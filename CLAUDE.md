@@ -250,3 +250,227 @@ speaker_notes: str = Field(
 - 品質覆蓋率: **100%** (6/6 檢查)
 - 響應時間: 86.9 秒（含 1 次重試）
 - Layout 多樣性: **5 種** (超過目標)
+
+---
+
+### 2026-02-18: UI 簡化與模板系統修復
+
+**完成項目**:
+
+1. ✅ **UI 簡化** - 移除「簡報風格」選項，避免與模板選擇混淆
+2. ✅ **模板映射修復** - 從 2/8 模板可用 → 8/8 模板全部可用 (100%)
+3. ✅ **動態模板載入** - 實作完整的模板動態載入機制
+
+#### 1. UI 簡化：移除「簡報風格」選項
+
+**問題發現**:
+- 前端同時存在「簡報風格」(style) 和「選擇模板」(template) 兩個選項
+- 用戶對兩者功能產生混淆，不清楚差異
+
+**解決方案**:
+
+**A. 註解 HTML 選單** ([index.html:54-62](txt2pptx/frontend/index.html#L54-L62)):
+```html
+<!-- Commented out to avoid confusion with template selection -->
+<!-- <div class="option-group">
+    <label for="style">簡報風格</label>
+    <select id="style">...</select>
+</div> -->
+```
+
+**B. 設定預設風格** ([app.js:69](txt2pptx/frontend/app.js#L69)):
+```javascript
+style: 'professional', // Default style (style selector commented out to avoid confusion)
+```
+
+**C. 清理未使用參考** ([app.js:13](txt2pptx/frontend/app.js#L13)):
+```javascript
+// style: () => $('#style'), // Commented out - style selector removed from UI
+```
+
+**結果**: UI 更簡潔，用戶只需選擇模板，避免混淆。
+
+#### 2. 模板映射問題診斷 🔍
+
+**嚴重 Bug 發現**:
+
+使用 `/sc:analyze --depth deep` 進行深度分析，發現：
+
+| 模板 ID | 前端顯示 | 檔案存在 | 後端實作 | 實際使用 |
+|---------|----------|----------|----------|----------|
+| `College_Elegance` | ✅ 學院典雅 | ✅ 1.3 MB | ❌ 無 | ⚠️ fallback → code_drawn |
+| `Data_Centric` | ✅ 數據導向 | ✅ 31 KB | ❌ 無 | ⚠️ fallback → code_drawn |
+| `High_Contrast` | ✅ 高調對比 | ✅ 68 KB | ❌ 無 | ⚠️ fallback → code_drawn |
+| `Minimalist_Corporate` | ✅ 極簡商務 | ✅ 927 KB | ❌ 無 | ⚠️ fallback → code_drawn |
+| `Modernist` | ✅ 摩登現代 | ✅ 41 KB | ❌ 無 | ⚠️ fallback → code_drawn |
+| `Startup_Edge` | ✅ 新創活力 | ✅ 42 KB | ❌ 無 | ⚠️ fallback → code_drawn |
+| `Zen_Serenity` | ✅ 靜謐禪意 | ✅ 168 KB | ❌ 無 | ⚠️ fallback → code_drawn |
+| `ocean_gradient` | ✅ 預設版面 | ✅ 26 KB | ✅ 有 | ✅ 正常使用模板 |
+
+**結論**: **7/8 模板 (87.5%) 無法正常使用**
+
+**根本原因**:
+
+1. **硬編碼模板路徑** ([pptx_generator_template.py:27](txt2pptx/backend/pptx_generator_template.py#L27)):
+   ```python
+   TEMPLATE_PATH = Path(__file__).parent.parent / "templates" / "ocean_gradient.pptx"
+   #                                                             ^^^^^^^^^^^^^^^^^^^
+   #                                                             寫死的檔名
+   ```
+
+2. **GENERATORS 字典缺少條目** ([main.py:54-57](txt2pptx/backend/main.py#L54-L57)):
+   ```python
+   GENERATORS = {
+       "code_drawn": generate_pptx_code_drawn,
+       "ocean_gradient": generate_pptx_template,
+       # ❌ 缺少其他 7 個模板的實作
+   }
+   ```
+
+#### 3. 動態模板載入實作 (方案 A) 🔧
+
+使用 `/sc:troubleshoot --fix` 實作完整修復。
+
+**修改 1: pptx_generator_template.py**
+
+**常數重構** (L27-29):
+```python
+# 修改前
+TEMPLATE_PATH = Path(__file__).parent.parent / "templates" / "ocean_gradient.pptx"
+
+# 修改後
+DEFAULT_TEMPLATE = "ocean_gradient.pptx"
+TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
+```
+
+**函數簽名更新** (L272-291):
+```python
+# 修改前
+def generate_pptx(outline: PresentationOutline) -> bytes:
+    prs = Presentation(str(TEMPLATE_PATH))
+
+# 修改後
+def generate_pptx(outline: PresentationOutline, template_id: str = "ocean_gradient") -> bytes:
+    """Generate PPTX bytes from a presentation outline using specified template.
+
+    Args:
+        outline: Presentation outline with slides data
+        template_id: Template file name (without .pptx extension).
+                    Defaults to "ocean_gradient".
+                    Falls back to default template if specified template doesn't exist.
+
+    Returns:
+        PPTX file as bytes
+    """
+    # Resolve template path
+    template_path = TEMPLATES_DIR / f"{template_id}.pptx"
+
+    if not template_path.exists():
+        logger.warning(f"Template {template_id} not found, using default template")
+        template_path = TEMPLATES_DIR / DEFAULT_TEMPLATE
+
+        if not template_path.exists():
+            raise FileNotFoundError(f"Default template not found: {template_path}")
+
+    logger.info(f"Loading template: {template_path.name}")
+    prs = Presentation(str(template_path))
+```
+
+**修改 2: main.py**
+
+**移除 GENERATORS 字典** ([main.py:53-58](txt2pptx/backend/main.py#L53-L58)):
+```python
+# 修改前
+GENERATORS = {
+    "code_drawn": generate_pptx_code_drawn,
+    "ocean_gradient": generate_pptx_template,
+}
+generator = GENERATORS.get(request.template, generate_pptx_code_drawn)
+pptx_bytes = generator(outline)
+
+# 修改後
+if request.template == "code_drawn":
+    logger.info("Using code-drawn generator")
+    pptx_bytes = generate_pptx_code_drawn(outline)
+else:
+    logger.info(f"Using template generator with template: {request.template}")
+    pptx_bytes = generate_pptx_template(outline, template_id=request.template)
+```
+
+#### 4. 測試驗證 ✅
+
+**單元測試** ([test/test_template_loading.py](test/test_template_loading.py)):
+
+```text
+🔍 檢查模板檔案...
+  ✅ College_Elegance.pptx exists (1328120 bytes)
+  ✅ Data_Centric.pptx exists (32120 bytes)
+  ✅ High_Contrast.pptx exists (69876 bytes)
+  ✅ Minimalist_Corporate.pptx exists (949412 bytes)
+  ✅ Modernist.pptx exists (41602 bytes)
+  ✅ ocean_gradient.pptx exists (27131 bytes)
+  ✅ Startup_Edge.pptx exists (45212 bytes)
+  ✅ Zen_Serenity.pptx exists (171785 bytes)
+
+🔧 測試模板載入...
+  ✅ College_Elegance: Success (1274596 bytes)
+  ✅ Data_Centric: Success (30740 bytes)
+  ✅ High_Contrast: Success (48293 bytes)
+  ✅ Minimalist_Corporate: Success (940217 bytes)
+  ✅ Modernist: Success (40243 bytes)
+  ✅ ocean_gradient: Success (28944 bytes)
+  ✅ Startup_Edge: Success (43411 bytes)
+  ✅ Zen_Serenity: Success (170742 bytes)
+
+🔄 測試 fallback 行為...
+  ✅ Fallback works (28944 bytes)
+
+成功載入: 8/8 個模板
+Fallback 測試: ✅ 通過
+🎉 所有測試通過！
+```
+
+**整合測試 (HTTP API)**:
+
+```text
+[1/8] 學院典雅... ✅
+[2/8] 數據導向... ✅
+[3/8] 高調對比... ✅
+[4/8] 極簡商務... ✅
+[5/8] 摩登現代... ✅
+[6/8] 預設版面... ✅
+[7/8] 新創活力... ✅
+[8/8] 靜謐禪意... ✅
+
+成功率: 100% (8/8)
+```
+
+**伺服器日誌驗證**:
+```log
+INFO:backend.main:Using template generator with template: College_Elegance
+INFO:backend.pptx_generator_template:Loading template: College_Elegance.pptx
+```
+
+#### 技術亮點 💡
+
+1. **動態模板解析**: 根據 `template_id` 參數動態載入對應的 .pptx 檔案
+2. **優雅降級**: 找不到模板時自動使用預設模板，不會導致錯誤
+3. **日誌追蹤**: 清楚記錄每次使用的模板，方便除錯
+4. **向後兼容**: 保持原有 API 介面不變，只需新增參數
+5. **完整測試**: 涵蓋單元測試和整合測試，確保修復穩定性
+
+#### 影響範圍評估
+
+| 影響類別 | 嚴重度 | 修復前 | 修復後 |
+|---------|--------|--------|--------|
+| **模板可用性** | 🔴 CRITICAL | 2/8 (25%) | 8/8 (100%) ✅ |
+| **用戶體驗** | 🔴 HIGH | 選擇未套用 | 正確套用 ✅ |
+| **功能正確性** | 🔴 HIGH | 87.5% 失效 | 100% 正常 ✅ |
+| **UI 清晰度** | 🟡 MEDIUM | 選項混淆 | 簡潔明確 ✅ |
+
+#### 性能指標
+
+- **模板載入成功率**: 100% (8/8)
+- **Fallback 機制**: 正常運作
+- **API 整合測試**: 100% 通過 (8/8)
+- **日誌可追溯性**: 完整記錄
