@@ -16,6 +16,11 @@ const els = {
     generationMode:  () => $('#generationMode'),
     template:        () => $('#template'),
     templateSelector: () => $('#templateSelector'),
+    templateUpload:  () => $('#templateUpload'),
+    uploadStatus:    () => $('#uploadStatus'),
+    onboardingModal: () => $('#onboardingModal'),
+    onboardingIntro: () => $('#onboardingIntro'),
+    onboardingSteps: () => $('#onboardingSteps'),
     generateBtn:     () => $('#generateBtn'),
     progressSection: () => $('#progressSection'),
     progressTitle:   () => $('#progressTitle'),
@@ -248,7 +253,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ── Dynamic Template Loading ──
-async function loadAvailableTemplates() {
+async function loadAvailableTemplates(selectId) {
     try {
         const response = await fetch('/api/templates');
         const data = await response.json();
@@ -262,9 +267,12 @@ async function loadAvailableTemplates() {
         templates.forEach(t => {
             const option = document.createElement('option');
             option.value = t.id;
-            option.textContent = t.name;
-            option.disabled = !t.available;
-            if (t.id === 'ocean_gradient') {
+            // 未註冊策略類別的模板加註標記
+            const suffix = t.is_registered === false ? ' ⚠ 未註冊' : '';
+            option.textContent = t.name + suffix;
+            // 未註冊或檔案不可用都禁用
+            option.disabled = !t.available || t.is_registered === false;
+            if (t.id === (selectId || 'ocean_gradient')) {
                 option.selected = true;
             }
             templateSelect.appendChild(option);
@@ -272,8 +280,79 @@ async function loadAvailableTemplates() {
 
     } catch (error) {
         console.error('載入模板列表失敗:', error);
-        // 保持預設的硬編碼選項
     }
+}
+
+// ── Custom Template Upload ──
+async function handleTemplateUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const status = els.uploadStatus();
+    status.textContent = '上傳中…';
+    status.className = 'upload-status pending';
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload-template', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok && response.status !== 202) {
+            throw new Error(data.detail || `HTTP ${response.status}`);
+        }
+
+        if (data.registered) {
+            // Template was already registered — refresh list and select it
+            status.textContent = `✓ 已就緒：${data.template_id}`;
+            status.className = 'upload-status success';
+            await loadAvailableTemplates(data.template_id);
+        } else {
+            // Template uploaded but unregistered — show 5-step warning
+            status.textContent = `⚠ 需要註冊：${data.template_id}`;
+            status.className = 'upload-status warning';
+            showOnboardingModal(file.name, data.message, data.steps);
+            // Refresh list — new file will appear but be disabled until registered
+            await loadAvailableTemplates();
+        }
+    } catch (error) {
+        status.textContent = `✗ 上傳失敗：${error.message}`;
+        status.className = 'upload-status error';
+    } finally {
+        // Reset input so the same file can be re-uploaded
+        event.target.value = '';
+    }
+}
+
+function showOnboardingModal(filename, message, steps) {
+    els.onboardingIntro().textContent =
+        `您上傳的 "${filename}" 尚未註冊為支援的模板。`;
+
+    const ol = els.onboardingSteps();
+    ol.innerHTML = '';
+    (steps || []).forEach(step => {
+        const li = document.createElement('li');
+        const desc = document.createElement('div');
+        desc.className = 'step-desc';
+        desc.textContent = step.desc;
+        const code = document.createElement('pre');
+        code.className = 'step-cmd';
+        code.textContent = step.cmd;
+        li.appendChild(desc);
+        li.appendChild(code);
+        ol.appendChild(li);
+    });
+
+    els.onboardingModal().classList.remove('hidden');
+}
+
+function closeOnboarding() {
+    els.onboardingModal().classList.add('hidden');
 }
 
 // ── Advanced Settings Interaction ──
@@ -300,4 +379,10 @@ function setupAdvancedSettings() {
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAvailableTemplates();
     setupAdvancedSettings();
+
+    // Hook up the file input
+    const uploadInput = els.templateUpload();
+    if (uploadInput) {
+        uploadInput.addEventListener('change', handleTemplateUpload);
+    }
 });

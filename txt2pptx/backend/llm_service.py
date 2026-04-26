@@ -183,7 +183,7 @@ def generate_outline_demo(request: GenerateRequest) -> PresentationOutline:
         layout=SlideLayout.TITLE,
         title=main_title,
         subtitle="自動生成簡報",
-        speaker_notes="開場白：歡迎大家參加今天的簡報。"
+        speaker_notes="開場白：歡迎大家參加今天的簡報。本次內容將涵蓋幾個重要主題與背景脈絡，請大家專心聆聽，並隨時提出問題或意見討論。"
     ))
 
     # Generate content slides
@@ -266,7 +266,7 @@ def generate_outline_demo(request: GenerateRequest) -> PresentationOutline:
             "下一步行動計畫",
             "歡迎提問與討論"
         ],
-        speaker_notes="感謝大家的聆聽，現在開放提問。"
+        speaker_notes="感謝大家的聆聽，現在開放提問。我們已經回顧了簡報的核心要點與未來發展方向，期待後續的討論、回饋意見以及進一步的合作機會。"
     ))
 
     return PresentationOutline(

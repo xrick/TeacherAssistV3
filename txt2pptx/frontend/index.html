@@ -98,9 +98,38 @@
                                 <option value="ocean_gradient" selected>Ocean Gradient</option>
                                 <!-- 將由 JavaScript 動態載入其他模板 -->
                             </select>
+                            <div class="upload-row">
+                                <label for="templateUpload" class="btn-upload">
+                                    <span>＋</span> 上傳自訂模板 (.pptx)
+                                </label>
+                                <input type="file" id="templateUpload" accept=".pptx" hidden>
+                                <span id="uploadStatus" class="upload-status"></span>
+                            </div>
                         </div>
                     </div>
                 </details>
+
+                <!-- Onboarding modal for unregistered uploaded templates -->
+                <div id="onboardingModal" class="modal hidden">
+                    <div class="modal-backdrop" onclick="closeOnboarding()"></div>
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>⚠️ 自訂模板需要先註冊</h3>
+                            <button class="modal-close" onclick="closeOnboarding()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <p id="onboardingIntro"></p>
+                            <p>請執行以下 5 個步驟（預估 10–30 分鐘）：</p>
+                            <ol id="onboardingSteps" class="onboarding-steps"></ol>
+                            <p class="onboarding-note">
+                                完成後重新整理頁面，新模板就會出現在選單中。
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-retry" onclick="closeOnboarding()">了解</button>
+                        </div>
+                    </div>
+                </div>
 
                 <button id="generateBtn" class="btn-generate" onclick="generatePresentation()">
                     <span class="btn-icon">⚡</span>
